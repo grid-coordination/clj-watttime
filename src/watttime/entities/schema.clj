@@ -6,12 +6,16 @@
   (:import [java.time Duration]))
 
 (def DataPoint
-  "A coerced data point with Instant timestamps."
+  "A coerced data point with Instant timestamps.
+  When period is available, includes :tick/beginning and :tick/end making
+  the entity a tick interval."
   [:map
    [:watttime.data-point/point-time inst?]
    [:watttime.data-point/value number?]
    [:watttime.data-point/imputed? {:optional true} [:maybe :boolean]]
-   [:watttime.data-point/last-updated {:optional true} [:maybe inst?]]])
+   [:watttime.data-point/last-updated {:optional true} [:maybe inst?]]
+   [:tick/beginning {:optional true} inst?]
+   [:tick/end {:optional true} inst?]])
 
 (def Model
   [:map

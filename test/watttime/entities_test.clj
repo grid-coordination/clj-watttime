@@ -93,7 +93,21 @@
     (testing "imputed flag"
       (is (true? (:watttime.data-point/imputed? dp))))
     (testing "raw metadata preserved"
-      (is (= raw (:watttime/raw (meta dp)))))))
+      (is (= raw (:watttime/raw (meta dp)))))
+    (testing "no tick keys without period"
+      (is (nil? (:tick/beginning dp)))
+      (is (nil? (:tick/end dp))))))
+
+(deftest data-point-with-period
+  (let [raw {:point_time "2022-07-15T00:00:00Z" :value 870}
+        period (java.time.Duration/ofMinutes 5)
+        dp (entities/->data-point raw period)]
+    (testing "tick/beginning equals point-time"
+      (is (= (:watttime.data-point/point-time dp) (:tick/beginning dp))))
+    (testing "tick/end is point-time + period"
+      (is (= (java.time.Instant/parse "2022-07-15T00:05:00Z") (:tick/end dp))))
+    (testing "original point-time still present"
+      (is (instance? java.time.Instant (:watttime.data-point/point-time dp))))))
 
 (deftest meta-coercion
   (let [raw-meta (:meta sample-historical-response)
@@ -114,14 +128,18 @@
     (is (= :watttime.signal-type/co2-moer (:watttime.region/signal-type r)))))
 
 (deftest data-response-coercion
-  (let [resp (entities/->data-response sample-historical-response)]
+  (let [resp (entities/->data-response sample-historical-response)
+        dp (first (:watttime.response/data resp))]
     (testing "data points coerced"
       (is (= 2 (count (:watttime.response/data resp)))))
     (testing "meta coerced"
       (is (= "CAISO_NORTH"
              (get-in resp [:watttime.response/meta :watttime.meta/region]))))
     (testing "raw metadata preserved"
-      (is (= sample-historical-response (:watttime/raw (meta resp)))))))
+      (is (= sample-historical-response (:watttime/raw (meta resp)))))
+    (testing "data points have tick interval keys from meta period"
+      (is (= (java.time.Instant/parse "2022-07-15T00:00:00Z") (:tick/beginning dp)))
+      (is (= (java.time.Instant/parse "2022-07-15T00:05:00Z") (:tick/end dp))))))
 
 (deftest forecast-response-coercion
   (let [resp (entities/->forecast-response sample-forecast-response)]

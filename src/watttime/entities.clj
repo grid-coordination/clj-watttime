@@ -5,7 +5,8 @@
   Coerced layer: namespaced keywords, Instants, Durations, keyword enums.
 
   Every coerced entity preserves the original raw data as :watttime/raw metadata."
-  (:import [java.time Duration Instant]))
+  (:import [java.time Duration Instant]
+           [java.time.temporal Temporal]))
 
 ;; ---------------------------------------------------------------------------
 ;; Parsing helpers
@@ -61,15 +62,24 @@
 (defn ->data-point
   "Coerce a raw data point from historical, forecast, or signal-index responses.
 
+  When `period` (a Duration) is provided, assocs :tick/beginning and :tick/end
+  directly on the entity, making it a tick interval.
+
   Returns a namespaced map with :watttime/raw metadata."
-  [raw]
-  (-> (cond-> {:watttime.data-point/point-time (parse-instant (:point_time raw))
-               :watttime.data-point/value      (:value raw)}
-        (contains? raw :imputed_data_used)
-        (assoc :watttime.data-point/imputed? (:imputed_data_used raw))
-        (contains? raw :last_updated)
-        (assoc :watttime.data-point/last-updated (parse-instant-maybe (:last_updated raw))))
-      (with-meta {:watttime/raw raw})))
+  ([raw]
+   (->data-point raw nil))
+  ([raw ^Duration period]
+   (let [point-time (parse-instant (:point_time raw))]
+     (-> (cond-> {:watttime.data-point/point-time point-time
+                  :watttime.data-point/value      (:value raw)}
+           (contains? raw :imputed_data_used)
+           (assoc :watttime.data-point/imputed? (:imputed_data_used raw))
+           (contains? raw :last_updated)
+           (assoc :watttime.data-point/last-updated (parse-instant-maybe (:last_updated raw)))
+           period
+           (assoc :tick/beginning point-time
+                  :tick/end (.plus ^Temporal point-time period)))
+         (with-meta {:watttime/raw raw})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Coercion: Metadata
@@ -121,9 +131,10 @@
 
   Attaches :watttime/raw metadata."
   [raw]
-  (-> {:watttime.response/data (mapv ->data-point (:data raw))
-       :watttime.response/meta (->meta (:meta raw))}
-      (with-meta {:watttime/raw raw})))
+  (let [period (some-> (get-in raw [:meta :data_point_period_seconds]) seconds->duration)]
+    (-> {:watttime.response/data (mapv #(->data-point % period) (:data raw))
+         :watttime.response/meta (->meta (:meta raw))}
+        (with-meta {:watttime/raw raw}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Coercion: Forecast responses
@@ -135,16 +146,19 @@
   Same structure as data-response but meta includes generated-at.
   Attaches :watttime/raw metadata."
   [raw]
-  (-> {:watttime.response/data (mapv ->data-point (:data raw))
-       :watttime.response/meta (->meta (:meta raw))}
-      (with-meta {:watttime/raw raw})))
+  (let [period (some-> (get-in raw [:meta :data_point_period_seconds]) seconds->duration)]
+    (-> {:watttime.response/data (mapv #(->data-point % period) (:data raw))
+         :watttime.response/meta (->meta (:meta raw))}
+        (with-meta {:watttime/raw raw}))))
 
 (defn ->forecast-entry
   "Coerce a single forecast entry from a historical forecast response."
-  [raw]
-  (-> {:watttime.forecast/generated-at (parse-instant (:generated_at raw))
-       :watttime.forecast/data         (mapv ->data-point (:forecast raw))}
-      (with-meta {:watttime/raw raw})))
+  ([raw]
+   (->forecast-entry raw nil))
+  ([raw ^Duration period]
+   (-> {:watttime.forecast/generated-at (parse-instant (:generated_at raw))
+        :watttime.forecast/data         (mapv #(->data-point % period) (:forecast raw))}
+       (with-meta {:watttime/raw raw}))))
 
 (defn ->extended-forecast-response
   "Coerce a raw historical (extended) forecast response.
@@ -152,9 +166,10 @@
   Each entry in :data contains a generated_at timestamp and a vector of forecasted points.
   Attaches :watttime/raw metadata."
   [raw]
-  (-> {:watttime.response/data (mapv ->forecast-entry (:data raw))
-       :watttime.response/meta (->meta (:meta raw))}
-      (with-meta {:watttime/raw raw})))
+  (let [period (some-> (get-in raw [:meta :data_point_period_seconds]) seconds->duration)]
+    (-> {:watttime.response/data (mapv #(->forecast-entry % period) (:data raw))
+         :watttime.response/meta (->meta (:meta raw))}
+        (with-meta {:watttime/raw raw}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Coercion: My-access hypercube

@@ -112,7 +112,9 @@ Transforms raw API responses into namespaced Clojure entities. Every coerced ent
 
 (:watttime.response/data coerced)
 ;; => [{:watttime.data-point/point-time #inst "2024-01-01T00:00:00Z"
-;;      :watttime.data-point/value 870} ...]
+;;      :watttime.data-point/value 870
+;;      :tick/beginning #inst "2024-01-01T00:00:00Z"
+;;      :tick/end #inst "2024-01-01T00:05:00Z"} ...]
 
 ;; Access original raw data
 (:watttime/raw (meta coerced))
@@ -157,6 +159,20 @@ Composable sliding-window rate limiter. Usable standalone.
 | `->forecast-response` | Forecast | `:watttime.response/*` |
 | `->extended-forecast-response` | Historical forecast | `:watttime.response/*` + `:watttime.forecast/*` |
 | `->my-access` | Account access | `:watttime.access/*` |
+
+### Tick Intervals
+
+Data points that come from response-level coercion (`->data-response`, `->forecast-response`, `->extended-forecast-response`) include `:tick/beginning` and `:tick/end` keys computed from the data point's timestamp and the period in the response metadata. This makes each data point a [tick](https://github.com/juxt/tick) interval, enabling Allen's interval algebra directly on the entity:
+
+```clojure
+(require '[tick.core :as t])
+
+(let [dp (first (:watttime.response/data coerced))]
+  (t/contains? dp some-instant)          ;=> true/false
+  (t/relation dp other-interval))        ;=> :meets, :overlaps, etc.
+```
+
+When calling `->data-point` directly without a period, tick keys are omitted.
 
 ## Signal Types
 
