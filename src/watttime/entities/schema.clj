@@ -16,7 +16,7 @@
 (def Model
   [:map
    [:watttime.model/date :string]
-   [:watttime.model/type :string]])
+   [:watttime.model/type {:optional true} :string]])
 
 (def Warning
   [:map

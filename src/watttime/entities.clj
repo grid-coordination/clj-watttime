@@ -50,8 +50,8 @@
 (defn ->model
   "Coerce a raw model map."
   [raw]
-  (-> {:watttime.model/date (:date raw)
-       :watttime.model/type (:type raw)}
+  (-> (cond-> {:watttime.model/date (:date raw)}
+        (:type raw) (assoc :watttime.model/type (:type raw)))
       (with-meta {:watttime/raw raw})))
 
 ;; ---------------------------------------------------------------------------

@@ -9,7 +9,8 @@
      :token    \"jwt-token-string\"           ; required for data endpoints
      :username \"user\"                       ; required for login/register
      :password \"pass\"}                      ; required for login/register"
-  (:require [hato.client :as hc]))
+  (:require [hato.client :as hc])
+  (:import [java.util Base64]))
 
 ;; ---------------------------------------------------------------------------
 ;; Defaults
@@ -49,23 +50,32 @@
 ;; Auth endpoints (no token required)
 ;; ---------------------------------------------------------------------------
 
+(defn- basic-auth-header
+  "Encode username:password as a Basic auth header value."
+  [username password]
+  (let [creds (str username ":" password)]
+    (str "Basic " (.encodeToString (Base64/getEncoder) (.getBytes creds "UTF-8")))))
+
 (defn login
   "GET /login with HTTP Basic auth.
   Returns the full HTTP response. On success, body contains {:token \"...\"}."
   [cfg]
   (hc/get (str (base-url cfg) "/login")
-          {:headers      {"User-Agent" (or (:user-agent cfg) default-user-agent)}
-           :basic-auth   {:user (:username cfg) :password (:password cfg)}
+          {:headers      {"User-Agent"    (or (:user-agent cfg) default-user-agent)
+                          "Authorization" (basic-auth-header (:username cfg) (:password cfg))}
            :as           :json
            :throw-exceptions? false}))
 
 (defn register
   "POST /register to create a new WattTime account.
-  params: {:username :password :email :org (optional)}"
+  params: {:username :password :email :org (optional)}
+  Note: despite the OpenAPI spec listing these as query params, the API
+  requires them as a JSON body per the documentation."
   [cfg params]
   (hc/post (str (base-url cfg) "/register")
            {:headers      {"User-Agent" (or (:user-agent cfg) default-user-agent)}
-            :query-params (snake-case-params params)
+            :content-type :json
+            :form-params  (snake-case-params params)
             :as           :json
             :throw-exceptions? false}))
 
