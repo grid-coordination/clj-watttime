@@ -19,7 +19,7 @@ A Clojure client library for the [WattTime API](https://docs.watttime.org), prov
 Add to your `deps.edn`:
 
 ```clojure
-energy.grid-coordination/clj-watttime {:mvn/version "0.1.0-SNAPSHOT"}
+energy.grid-coordination/clj-watttime {:mvn/version "0.1.0"}
 ```
 
 Or use a git dependency:
