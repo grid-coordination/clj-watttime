@@ -22,6 +22,6 @@ jobs:
         run: |
           clj-kondo --lint "$(clojure -Spath)" --dependencies --parallel --copy-configs
       - name: Lint
-        run: clj-kondo --lint src test --fail-level warning
+        run: clj-kondo --lint src test test-integration --fail-level warning
       - name: Test
         run: clojure -M:test

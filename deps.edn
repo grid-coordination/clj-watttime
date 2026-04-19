@@ -1,6 +1,7 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.3"}
         hato/hato {:mvn/version "1.0.0"}
+        cheshire/cheshire {:mvn/version "5.13.0"}
         metosin/malli {:mvn/version "0.16.4"}
         tick/tick {:mvn/version "1.0"}}
 
@@ -22,4 +23,9 @@
 
            :test {:extra-paths ["test"]
                   :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
-                  :main-opts ["-m" "kaocha.runner" "--config-file" "tests.edn"]}}}
+                  :main-opts ["-m" "kaocha.runner" "--config-file" "tests.edn"]}
+
+           :test-integration
+           {:extra-paths ["test-integration"]
+            :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+            :main-opts ["-m" "kaocha.runner" "--focus" ":integration"]}}}

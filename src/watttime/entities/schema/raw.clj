@@ -17,7 +17,7 @@
 (def Model
   [:map
    [:date :string]
-   [:type :string]])
+   [:type {:optional true} :string]])
 
 ;; ---------------------------------------------------------------------------
 ;; Data points
@@ -141,10 +141,13 @@
 (def HCModel
   [:map
    [:date {:optional true} :string]
-   [:type :string]
+   [:type {:optional true} :string]
+   [:model {:optional true} :string]
    [:data_start {:optional true} [:maybe :string]]
+   [:data_end {:optional true} [:maybe :string]]
    [:train_start {:optional true} [:maybe :string]]
-   [:train_end {:optional true} [:maybe :string]]])
+   [:train_end {:optional true} [:maybe :string]]
+   [:historical_model {:optional true} :string]])
 
 (def HCEndpoint
   [:map

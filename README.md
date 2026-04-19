@@ -210,11 +210,14 @@ WattTime provides several signal types, represented as keywords after coercion:
 # Start nREPL (dynamic port, written to .nrepl-port)
 clojure -M:nrepl
 
-# Run tests
+# Run unit tests
 clojure -M:test
 
+# Run integration tests (requires WATTTIME_USER / WATTTIME_PASSWORD)
+clojure -M:test-integration
+
 # Lint
-clj-kondo --lint src test
+clj-kondo --lint src test test-integration
 
 # Build JAR
 clojure -T:build ci
@@ -223,12 +226,16 @@ clojure -T:build ci
 clojure -T:build install
 ```
 
+### Integration Tests
+
+The `test-integration/` directory contains live API tests that validate the full pipeline: raw HTTP response, raw schema validation, entity coercion, and coerced schema validation. They cover all data endpoints plus their coerced (`*`) variants.
+
+Integration tests require `WATTTIME_USER` and `WATTTIME_PASSWORD` environment variables. When credentials are not set, the tests skip gracefully.
+
 ## WattTime Account
 
 You need a WattTime account to use this library. [Register here](https://watttime.org/get-the-data/data-plans/) — a free tier is available with access to the `CAISO_NORTH` region.
 
 ## License
 
-Copyright (c) Clark Communications Corporation. All rights reserved.
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+Copyright (c) Clark Communications Corporation. MIT License. See [LICENSE](LICENSE) for details.

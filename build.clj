@@ -5,7 +5,7 @@
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'energy.grid-coordination/clj-watttime)
-(def version "0.1.0")
+(def version "0.1.1")
 (def class-dir "target/classes")
 
 (defn test "Run all the tests." [opts]
